@@ -25,3 +25,4 @@ env/
 
 # Project archive
 backend.zip
+*.egg-info/
