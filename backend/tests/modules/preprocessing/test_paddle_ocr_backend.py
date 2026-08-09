@@ -1,5 +1,5 @@
 from io import BytesIO
-
+import pytest
 from PIL import Image
 
 from backend.modules.preprocessing.ocr.paddle_backend import (
@@ -50,10 +50,8 @@ def test_backend_initializes():
 
     assert backend is not None
 
-
+@pytest.mark.integration
 def test_backend_accepts_pillow_image():
     backend = PaddleOCRBackend()
-
     result = backend.extract_text(create_test_image())
-
     assert isinstance(result, str)

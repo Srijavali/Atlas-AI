@@ -4,3 +4,6 @@ class ImageProcessingError(Exception):
 
 class OCRProcessingError(Exception):
     """Raised when OCR processing cannot be completed."""
+
+class VisionProcessingError(Exception):
+    """Raised when visual understanding cannot be completed."""
