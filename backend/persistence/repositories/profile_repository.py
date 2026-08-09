@@ -1,3 +1,4 @@
+
 import uuid
 from datetime import datetime, time, timezone
 from typing import Any
@@ -34,13 +35,18 @@ class ProfileRepository:
     async def create_or_update_profile(
         self,
         user_id: uuid.UUID,
+        *,
+        role: str | None = None,
         interests: Any | None = None,
         market_preferences: Any | None = None,
         tracked_entities: Any | None = None,
-        briefing_enabled: bool = False,
+        insight_preferences: Any | None = None,
+        alert_preferences: Any | None = None,
+        briefing_enabled: bool | None = None,
         briefing_time: time | None = None,
         timezone_str: str | None = None,
     ) -> UserProfileModel:
+
         profile = await self.get_by_user_id(user_id)
 
         now = datetime.now(timezone.utc)
@@ -48,9 +54,12 @@ class ProfileRepository:
         if profile is None:
             profile = UserProfileModel(
                 user_id=user_id,
+                role=role,
                 interests=interests,
                 market_preferences=market_preferences,
                 tracked_entities=tracked_entities,
+                insight_preferences=insight_preferences,
+                alert_preferences=alert_preferences,
                 briefing_enabled=briefing_enabled,
                 briefing_time=briefing_time,
                 timezone=timezone_str,
@@ -61,6 +70,9 @@ class ProfileRepository:
             self.session.add(profile)
 
         else:
+            if role is not None:
+                profile.role = role
+
             if interests is not None:
                 profile.interests = interests
 
@@ -70,7 +82,15 @@ class ProfileRepository:
             if tracked_entities is not None:
                 profile.tracked_entities = tracked_entities
 
-            profile.briefing_enabled = briefing_enabled
+            if insight_preferences is not None:
+                profile.insight_preferences = insight_preferences
+
+            if alert_preferences is not None:
+                profile.alert_preferences = alert_preferences
+
+            
+            if briefing_enabled is not None:
+                profile.briefing_enabled = briefing_enabled
 
             if briefing_time is not None:
                 profile.briefing_time = briefing_time
@@ -83,3 +103,4 @@ class ProfileRepository:
         await self.session.flush()
 
         return profile
+

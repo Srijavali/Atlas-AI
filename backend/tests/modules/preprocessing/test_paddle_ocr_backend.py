@@ -1,4 +1,5 @@
 from io import BytesIO
+
 import pytest
 from PIL import Image
 
@@ -11,8 +12,16 @@ from backend.modules.preprocessing.ocr.paddle_backend import (
 def create_test_image() -> Image.Image:
     buffer = BytesIO()
 
-    image = Image.new("RGB", (100, 100), "white")
-    image.save(buffer, format="PNG")
+    image = Image.new(
+        "RGB",
+        (100, 100),
+        "white",
+    )
+
+    image.save(
+        buffer,
+        format="PNG",
+    )
 
     buffer.seek(0)
 
@@ -25,6 +34,7 @@ def test_backend_configuration_uses_mobile_models():
     assert config.text_detection_model_name == (
         "PP-OCRv5_mobile_det"
     )
+
     assert config.text_recognition_model_name == (
         "PP-OCRv5_mobile_rec"
     )
@@ -32,17 +42,24 @@ def test_backend_configuration_uses_mobile_models():
     assert config.use_doc_orientation_classify is False
     assert config.use_doc_unwarping is False
     assert config.use_textline_orientation is False
+    assert config.enable_mkldnn is False
 
 
 def test_backend_rejects_non_image_input():
     backend = PaddleOCRBackend()
 
     try:
-        backend.extract_text("not an image")  # type: ignore[arg-type]
+        backend.extract_text(
+            "not an image"  # type: ignore[arg-type]
+        )
     except TypeError as exc:
-        assert str(exc) == "PaddleOCRBackend expects a Pillow Image"
+        assert str(exc) == (
+            "PaddleOCRBackend expects a Pillow Image"
+        )
     else:
-        raise AssertionError("Expected TypeError")
+        raise AssertionError(
+            "Expected TypeError"
+        )
 
 
 def test_backend_initializes():
@@ -50,8 +67,13 @@ def test_backend_initializes():
 
     assert backend is not None
 
+
 @pytest.mark.integration
 def test_backend_accepts_pillow_image():
     backend = PaddleOCRBackend()
-    result = backend.extract_text(create_test_image())
+
+    result = backend.extract_text(
+        create_test_image()
+    )
+
     assert isinstance(result, str)

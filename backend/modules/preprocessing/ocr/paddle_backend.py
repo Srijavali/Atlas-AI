@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import numpy as np
 from dataclasses import dataclass
 
@@ -19,6 +20,9 @@ class PaddleOCRConfig:
     use_textline_orientation: bool = False
 
     text_rec_score_thresh: float = 0.0
+
+    # Disable oneDNN/MKLDNN for CPU compatibility.
+    enable_mkldnn: bool = False
 
 
 class PaddleOCRBackend:
@@ -46,10 +50,13 @@ class PaddleOCRBackend:
             use_doc_orientation_classify=(
                 self._config.use_doc_orientation_classify
             ),
-            use_doc_unwarping=self._config.use_doc_unwarping,
+            use_doc_unwarping=(
+                self._config.use_doc_unwarping
+            ),
             use_textline_orientation=(
                 self._config.use_textline_orientation
             ),
+            enable_mkldnn=self._config.enable_mkldnn,
         )
 
     def extract_text(self, image: Image.Image) -> str:
@@ -72,11 +79,25 @@ class PaddleOCRBackend:
             result_json = result.json
 
             if isinstance(result_json, dict):
-                data = result_json.get("res", result_json)
-                rec_texts = data.get("rec_texts", [])
+                data = result_json.get(
+                    "res",
+                    result_json,
+                )
+
+                rec_texts = data.get(
+                    "rec_texts",
+                    [],
+                )
 
                 for text in rec_texts:
-                    if isinstance(text, str) and text.strip():
-                        extracted_lines.append(text.strip())
+                    if (
+                        isinstance(text, str)
+                        and text.strip()
+                    ):
+                        extracted_lines.append(
+                            text.strip()
+                        )
 
-        return "\n".join(extracted_lines).strip()
+        return "\n".join(
+            extracted_lines
+        ).strip()
