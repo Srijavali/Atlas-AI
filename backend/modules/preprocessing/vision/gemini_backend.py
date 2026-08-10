@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,8 +8,11 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
+from backend.configuration.settings import settings
 from backend.domain.exceptions import VisionProcessingError
-from backend.modules.preprocessing.vision.vision_processor import VisionBackend
+from backend.modules.preprocessing.vision.vision_processor import (
+    VisionBackend,
+)
 
 
 @dataclass(slots=True)
@@ -22,7 +26,9 @@ class GeminiVisionConfig:
 
 
 class GeminiVisionBackend(VisionBackend):
-    """Gemini-backed implementation of the Atlas VisionBackend."""
+    """
+    Gemini-backed implementation of the Atlas VisionBackend.
+    """
 
     def __init__(
         self,
@@ -31,14 +37,35 @@ class GeminiVisionBackend(VisionBackend):
     ) -> None:
         self._config = config or GeminiVisionConfig()
 
+        if client is not None:
+            self._client = client
+            return
+
+        api_keys = [
+            key.strip()
+            for key in settings.GEMINI_API_KEYS.split(",")
+            if key.strip()
+        ]
+
+        if not api_keys:
+            raise VisionProcessingError(
+                "No Gemini API keys configured for vision processing"
+            )
+
         try:
-            self._client = client or genai.Client()
+            self._client = genai.Client(
+                api_key=api_keys[0]
+            )
         except Exception as exc:
             raise VisionProcessingError(
                 "Failed to initialize Gemini Vision client"
             ) from exc
 
     def describe(self, image: Image.Image) -> str:
+        """
+        Generate a concise textual understanding of the image.
+        """
+
         if not isinstance(image, Image.Image):
             raise TypeError(
                 "GeminiVisionBackend expects a Pillow Image"
@@ -46,7 +73,11 @@ class GeminiVisionBackend(VisionBackend):
 
         try:
             buffer = BytesIO()
-            image.save(buffer, format="PNG")
+
+            image.save(
+                buffer,
+                format="PNG",
+            )
 
             image_part = types.Part.from_bytes(
                 data=buffer.getvalue(),
@@ -77,3 +108,4 @@ class GeminiVisionBackend(VisionBackend):
             raise VisionProcessingError(
                 "Gemini Vision request failed"
             ) from exc
+

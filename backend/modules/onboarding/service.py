@@ -1,4 +1,5 @@
-﻿from __future__ import annotations
+﻿
+from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import time
@@ -21,15 +22,18 @@ class OnboardingService:
     """
     Deterministic + hybrid onboarding state machine for Atlas.
 
-    The state machine itself is deterministic.
+    The onboarding collects useful information for:
+    - personalization
+    - market awareness
+    - watchlists
+    - insights
+    - alerts
+    - daily briefings
 
     Users can:
-    - choose predefined options
-    - provide custom free-text answers
+    - provide predefined or custom free-text answers
     - skip optional questions
-
-    The service owns onboarding behavior and delegates persistence
-    to repositories. Repositories do not commit transactions.
+    - configure proactive features
     """
 
     OPTIONAL_STEPS = {
@@ -96,15 +100,15 @@ class OnboardingService:
         response: str,
     ) -> OnboardingResult:
         """
-        Handle a response for the current onboarding step.
+        Handle one response for the current onboarding step.
         """
 
         current_step = session.current_step
         response = response.strip()
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # WELCOME
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "WELCOME":
             return await self._move_to_step(
@@ -112,9 +116,9 @@ class OnboardingService:
                 "ASK_NAME",
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # NAME
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_NAME":
             if not response:
@@ -135,13 +139,14 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # ROLE
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_ROLE":
+            temporary_data = self._data(session)
+
             if self._is_skip(response):
-                temporary_data = self._data(session)
                 temporary_data["role"] = None
 
                 return await self._move_to_step(
@@ -157,12 +162,14 @@ class OnboardingService:
                     "ASK_ROLE",
                     (
                         "No worries. 😊\n\n"
-                        "Tell me in your own words what you do, "
-                        "or say \"skip\" if you'd rather skip this."
+                        "Tell me a little about what you do "
+                        "or what you mainly work on.\n\n"
+                        "For example: student, investor, analyst, "
+                        "researcher, founder, or developer.\n\n"
+                        'You can also say "skip".'
                     ),
                 )
 
-            temporary_data = self._data(session)
             temporary_data["role"] = role
 
             return await self._move_to_step(
@@ -171,13 +178,14 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # INTERESTS
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_INTERESTS":
+            temporary_data = self._data(session)
+
             if self._is_skip(response):
-                temporary_data = self._data(session)
                 temporary_data["interests"] = []
 
                 return await self._move_to_step(
@@ -192,14 +200,14 @@ class OnboardingService:
                 return self._retry(
                     "ASK_INTERESTS",
                     (
-                        "Tell me at least one thing you're interested in. 😊\n\n"
+                        "Tell me at least one thing you're "
+                        "interested in. 😊\n\n"
                         "For example: AI, technology, startups, "
-                        "stocks, or financial news.\n\n"
-                        "Or say \"skip\"."
+                        "stocks, research, or financial news.\n\n"
+                        'Or say "skip".'
                     ),
                 )
 
-            temporary_data = self._data(session)
             temporary_data["interests"] = interests
 
             return await self._move_to_step(
@@ -208,9 +216,9 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # MARKET PREFERENCES
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_MARKET_PREFERENCES":
             temporary_data = self._data(session)
@@ -230,10 +238,11 @@ class OnboardingService:
                 return self._retry(
                     "ASK_MARKET_PREFERENCES",
                     (
-                        "Which markets or financial areas interest you? 📊\n\n"
-                        "For example: Indian stocks, US stocks, ETFs, "
-                        "IPOs, crypto, sectors, or the economy.\n\n"
-                        "Or say \"skip\"."
+                        "Which markets or financial areas "
+                        "matter to you? 📊\n\n"
+                        "For example: Indian stocks, US stocks, "
+                        "ETFs, IPOs, crypto, sectors, or the economy.\n\n"
+                        'Or say "skip".'
                     ),
                 )
 
@@ -247,9 +256,9 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
-        # WATCHLIST / TRACKED ENTITIES
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
+        # WATCHLIST
+        # ---------------------------------------------------------
 
         if current_step == "ASK_WATCHLIST":
             temporary_data = self._data(session)
@@ -269,11 +278,12 @@ class OnboardingService:
                 return self._retry(
                     "ASK_WATCHLIST",
                     (
+                        "What should I keep an eye on for you? 🔎\n\n"
                         "You can name companies, stocks, sectors, "
-                        "or markets you'd like me to watch. 🔎\n\n"
+                        "or markets.\n\n"
                         "For example: NVIDIA, Microsoft, "
                         "semiconductors, or Indian markets.\n\n"
-                        "Or say \"skip\"."
+                        'Nothing specific? Say "skip".'
                     ),
                 )
 
@@ -287,9 +297,9 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # INSIGHT PREFERENCES
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_INSIGHT_PREFERENCES":
             temporary_data = self._data(session)
@@ -309,11 +319,13 @@ class OnboardingService:
                 return self._retry(
                     "ASK_INSIGHT_PREFERENCES",
                     (
-                        "What kind of information would be most "
-                        "useful to you? 📰\n\n"
-                        "For example: earnings, company news, filings, "
-                        "market-moving events, M&A, or macro news.\n\n"
-                        "Or say \"skip\"."
+                        "Got it. Now, when something important "
+                        "happens, what kind of information would "
+                        "actually be useful to you? 📰\n\n"
+                        "For example: earnings, company news, "
+                        "filings, M&A, funding, market-moving events, "
+                        "or macro news.\n\n"
+                        'Or say "skip".'
                     ),
                 )
 
@@ -325,9 +337,9 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # ALERTS
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_ALERTS":
             temporary_data = self._data(session)
@@ -347,10 +359,12 @@ class OnboardingService:
                 return self._retry(
                     "ASK_ALERTS",
                     (
-                        "Is there anything you'd like me to watch for? 🔔\n\n"
+                        "Almost there. 🔔\n\n"
+                        "What would you actually want Atlas "
+                        "to alert you about?\n\n"
                         "For example: earnings, company announcements, "
                         "filings, funding events, or big market moves.\n\n"
-                        "Or say \"skip\"."
+                        'Or say "skip".'
                     ),
                 )
 
@@ -364,9 +378,9 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # DAILY BRIEFING
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_DAILY_BRIEFING":
             normalized = response.lower()
@@ -400,11 +414,14 @@ class OnboardingService:
                     "ASK_DAILY_BRIEFING",
                     (
                         "Would you like a daily briefing from Atlas? ☀️\n\n"
-                        "You can say yes, no, or skip."
+                        "I'll keep it focused on the things "
+                        "you actually care about.\n\n"
+                        "Just say yes, no, or skip."
                     ),
                 )
 
             temporary_data = self._data(session)
+
             temporary_data["briefing_enabled"] = (
                 briefing_enabled
             )
@@ -424,9 +441,9 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # BRIEFING TIME
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_BRIEFING_TIME":
             temporary_data = self._data(session)
@@ -461,13 +478,14 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # TIMEZONE
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "ASK_TIMEZONE":
+            temporary_data = self._data(session)
+
             if self._is_skip(response):
-                temporary_data = self._data(session)
                 temporary_data["timezone"] = None
 
                 return await self._move_to_step(
@@ -476,7 +494,9 @@ class OnboardingService:
                     temporary_data=temporary_data,
                 )
 
-            timezone_name = self._validate_timezone(response)
+            timezone_name = self._validate_timezone(
+                response
+            )
 
             if timezone_name is None:
                 return self._retry(
@@ -485,11 +505,10 @@ class OnboardingService:
                         "I couldn't recognize that timezone. 🌏\n\n"
                         "For example: Asia/Kolkata, "
                         "America/New_York, or Europe/London.\n\n"
-                        "You can also say \"skip\"."
+                        'You can also say "skip".'
                     ),
                 )
 
-            temporary_data = self._data(session)
             temporary_data["timezone"] = timezone_name
 
             return await self._move_to_step(
@@ -498,9 +517,9 @@ class OnboardingService:
                 temporary_data=temporary_data,
             )
 
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
         # CONFIRM
-        # -----------------------------------------------------
+        # ---------------------------------------------------------
 
         if current_step == "CONFIRM":
             normalized = response.lower()
@@ -533,6 +552,9 @@ class OnboardingService:
                         "Tell me what you'd like to change.\n\n"
                         "For example:\n"
                         "• Change my interests\n"
+                        "• Change my markets\n"
+                        "• Change what I watch\n"
+                        "• Change my alerts\n"
                         "• Change my briefing time\n"
                         "• Turn off my daily briefing\n\n"
                         "I'll help you update it."
@@ -543,7 +565,7 @@ class OnboardingService:
                 "CONFIRM",
                 (
                     "Does everything look right? 😊\n\n"
-                    "Say \"yes\" to finish, or tell me "
+                    'Say "yes" to finish, or tell me '
                     "what you'd like to change."
                 ),
             )
@@ -595,7 +617,9 @@ class OnboardingService:
                 False,
             ),
             briefing_time=briefing_time,
-            timezone_str=temporary_data.get("timezone"),
+            timezone_str=temporary_data.get(
+                "timezone"
+            ),
         )
 
         await self._onboarding_repository.complete_session(
@@ -653,7 +677,9 @@ class OnboardingService:
 
     @staticmethod
     def _data(session) -> dict[str, Any]:
-        return dict(session.temporary_data or {})
+        return dict(
+            session.temporary_data or {}
+        )
 
     @staticmethod
     def _retry(
@@ -666,7 +692,9 @@ class OnboardingService:
         )
 
     @staticmethod
-    def _is_skip(response: str) -> bool:
+    def _is_skip(
+        response: str,
+    ) -> bool:
         return response.strip().lower() in {
             "skip",
             "skipping",
@@ -678,15 +706,12 @@ class OnboardingService:
         }
 
     @staticmethod
-    def _parse_list(response: str) -> list[str]:
+    def _parse_list(
+        response: str,
+    ) -> list[str]:
         """
-        Parse comma/newline/semicolon separated custom input.
-
-        Examples:
-            AI, startups, technology
-            NVIDIA
-            Microsoft
-            AI; fintech; semiconductors
+        Parse comma/newline/semicolon separated values
+        while removing duplicates.
         """
 
         normalized = (
@@ -799,7 +824,7 @@ class OnboardingService:
             return None
 
     # ---------------------------------------------------------
-    # CONFIRMATION MESSAGE
+    # CONFIRMATION
     # ---------------------------------------------------------
 
     @staticmethod
@@ -807,66 +832,109 @@ class OnboardingService:
         data: dict[str, Any],
     ) -> str:
 
-        display_name = data.get("display_name")
-        role = data.get("role")
-        interests = data.get("interests", [])
-        markets = data.get("market_preferences", [])
-        tracked = data.get("tracked_entities", [])
-        insights = data.get("insight_preferences", [])
-        alerts = data.get("alert_preferences", [])
+        display_name = data.get(
+            "display_name"
+        )
+
+        role = data.get(
+            "role"
+        )
+
+        interests = data.get(
+            "interests",
+            [],
+        )
+
+        markets = data.get(
+            "market_preferences",
+            [],
+        )
+
+        tracked = data.get(
+            "tracked_entities",
+            [],
+        )
+
+        insights = data.get(
+            "insight_preferences",
+            [],
+        )
+
+        alerts = data.get(
+            "alert_preferences",
+            [],
+        )
+
         briefing_enabled = data.get(
             "briefing_enabled",
             False,
         )
-        briefing_time = data.get("briefing_time")
-        timezone = data.get("timezone")
+
+        briefing_time = data.get(
+            "briefing_time"
+        )
+
+        timezone = data.get(
+            "timezone"
+        )
 
         lines = [
             "✨ Almost there!",
             "",
-            "Here's what I've got so far:",
+            "Here's what I've learned about you:",
             "",
         ]
 
-        if display_name:
-            lines.extend([
-                f"👋 I'll call you: {display_name}",
-                "",
-            ])
+        if display_name or role:
+            lines.append("👤 About you")
 
-        if role:
-            lines.extend([
-                f"💼 You are: {role}",
-                "",
-            ])
+            if display_name and role:
+                lines.append(
+                    f"   {display_name} · {role}"
+                )
+            elif display_name:
+                lines.append(
+                    f"   {display_name}"
+                )
+            elif role:
+                lines.append(
+                    f"   {role}"
+                )
+
+            lines.append("")
 
         if interests:
             lines.extend([
-                f"📈 Interests: {', '.join(interests)}",
+                "🎯 Interests",
+                f"   {', '.join(interests)}",
                 "",
             ])
 
         if markets:
             lines.extend([
-                f"📊 Markets: {', '.join(markets)}",
+                "📊 Markets & financial areas",
+                f"   {', '.join(markets)}",
                 "",
             ])
 
         if tracked:
             lines.extend([
-                f"🔎 Watching: {', '.join(tracked)}",
+                "🔎 Watching",
+                f"   {', '.join(tracked)}",
                 "",
             ])
 
         if insights:
             lines.extend([
-                f"📰 Insights: {', '.join(insights)}",
+                "📰 Insights",
+                f"   {', '.join(insights)}",
                 "",
             ])
 
         if alerts:
             lines.extend([
-                f"🔔 Alerts: {', '.join(alerts)}",
+                "🔔 Alerts",
+                f"   {', '.join(alerts)}",
                 "",
             ])
 
@@ -879,26 +947,32 @@ class OnboardingService:
                 )
 
             lines.extend([
-                f"☀️ Daily briefing: {briefing}",
+                "☀️ Daily briefing",
+                f"   {briefing}",
                 "",
             ])
+
         else:
             lines.extend([
-                "☀️ Daily briefing: Off",
+                "☀️ Daily briefing",
+                "   Off",
                 "",
             ])
 
         if timezone:
             lines.extend([
-                f"🌏 Timezone: {timezone}",
+                "🌏 Timezone",
+                f"   {timezone}",
                 "",
             ])
 
         lines.extend([
-            "Does everything look right?",
+            "────────────────────",
             "",
-            'Say "yes" to finish, or tell me what '
-            "you'd like to change. 😊",
+            "Does everything look right? 😊",
+            "",
+            'Say "yes" to finish, or tell me '
+            "what you'd like to change.",
         ])
 
         return "\n".join(lines)
@@ -918,7 +992,9 @@ class OnboardingService:
         data = temporary_data
 
         if data is None and session is not None:
-            data = dict(session.temporary_data or {})
+            data = dict(
+                session.temporary_data or {}
+            )
 
         data = data or {}
 
@@ -930,77 +1006,86 @@ class OnboardingService:
         if step == "COMPLETED":
             return (
                 "You're all set! 🎉\n\n"
-                "Atlas will use what you've shared to make your "
-                "updates, research, alerts, and briefings more useful.\n\n"
-                "And don't worry — you can change your "
-                "preferences anytime.\n\n"
-                "What would you like to do first?"
+                "Atlas will use what you've shared to make "
+                "your research, market updates, alerts, and "
+                "daily briefings more useful.\n\n"
+                "You can always change your preferences later "
+                "and teach Atlas more as you use it.\n\n"
+                "What would you like to do first? 🚀"
             )
 
         messages = {
             "WELCOME": (
                 "Hey! 👋 I'm Atlas.\n\n"
-                "I can help you keep up with markets, companies, "
-                "financial news, research, and the things you care about.\n\n"
-                "Let's get to know you a little first.\n\n"
-                "What should I call you?"
+                "I can help you with markets, companies, "
+                "financial news, research, documents, and more.\n\n"
+                "Let's get to know you a little first."
             ),
 
             "ASK_NAME": (
-                "What should I call you? 😊"
+                "First things first 😊\n\n"
+                "What should I call you?"
             ),
 
             "ASK_ROLE": (
-                "Nice to meet you! 😊\n\n"
-                "What do you do?\n\n"
-                "For example: investor, analyst, founder, "
-                "researcher, finance professional, or student.\n\n"
-                "You can also tell me in your own words, or say "
-                "\"skip\" if you'd rather skip this."
+                "Nice to meet you! 👋\n\n"
+                "What do you do, or what kind of work "
+                "do you mainly focus on?\n\n"
+                "For example: student, investor, analyst, "
+                "researcher, founder, or developer.\n\n"
+                'You can also say "skip".'
             ),
 
             "ASK_INTERESTS": (
-                "Nice! 📈\n\n"
-                "What are you interested in?\n\n"
+                "Got it! 🎯\n\n"
+                "What topics should I keep in mind when "
+                "helping you?\n\n"
                 "For example: AI, technology, startups, "
-                "stocks, financial news, or anything else you follow.\n\n"
-                "Tell me as many as you like, or say \"skip\"."
+                "stocks, research, financial news, or "
+                "anything else you follow.\n\n"
+                'Tell me as many as you like, or say "skip".'
             ),
 
             "ASK_MARKET_PREFERENCES": (
-                "Got it! 📊\n\n"
+                "Now let's make the market side more useful. 📊\n\n"
                 "Which markets or financial areas do you care about?\n\n"
                 "For example: Indian stocks, US stocks, ETFs, "
                 "IPOs, crypto, sectors, or the economy.\n\n"
-                "You can also say \"skip\"."
+                'You can also say "skip".'
             ),
 
             "ASK_WATCHLIST": (
-                "Anything specific you want me to watch? 🔎\n\n"
-                "You can name companies, stocks, sectors, or markets.\n\n"
+                "Let's set up what I should keep an eye on. 🔎\n\n"
+                "Which companies, stocks, sectors, or markets "
+                "would you like me to follow?\n\n"
                 "For example: NVIDIA, Microsoft, semiconductors, "
                 "or Indian markets.\n\n"
-                "Nothing specific? Just say \"skip\"."
+                "We'll use this together with your insight and "
+                "alert preferences to make updates more relevant.\n\n"
+                'Nothing specific? Just say "skip".'
             ),
 
             "ASK_INSIGHT_PREFERENCES": (
-                "When something important happens, what would you "
-                "like to know about? 📰\n\n"
+                "Great. 📰\n\n"
+                "When something important happens, what kind "
+                "of information would actually be useful to you?\n\n"
                 "For example: earnings, company news, filings, "
-                "market-moving events, M&A, or macro news.\n\n"
-                "Tell me what would be most useful, or say \"skip\"."
+                "M&A, funding, market-moving events, or macro news.\n\n"
+                'Tell me what matters most, or say "skip".'
             ),
 
             "ASK_ALERTS": (
-                "Would you like me to watch out for anything? 🔔\n\n"
+                "Perfect. One last part of the monitoring setup. 🔔\n\n"
+                "What would you want Atlas to actively alert "
+                "you about?\n\n"
                 "For example: earnings, company announcements, "
                 "filings, funding events, or big market moves.\n\n"
-                "You can tell me your own alerts, or say \"skip\"."
+                'You can add your own, or say "skip".'
             ),
 
             "ASK_DAILY_BRIEFING": (
                 "One more thing ☀️\n\n"
-                "Would you like a daily briefing from me?\n\n"
+                "Would you like a daily briefing from Atlas?\n\n"
                 "I'll keep it focused on the things you actually care about.\n\n"
                 "Just say yes, no, or skip."
             ),
@@ -1013,11 +1098,11 @@ class OnboardingService:
 
             "ASK_TIMEZONE": (
                 "Almost done! 🌏\n\n"
-                "Which timezone should I use for your briefings "
-                "and alerts?\n\n"
+                "Which timezone should I use for your "
+                "briefings and alerts?\n\n"
                 "For example: Asia/Kolkata, America/New_York, "
                 "or Europe/London.\n\n"
-                "You can also say \"skip\"."
+                'You can also say "skip".'
             ),
         }
 
@@ -1028,6 +1113,4 @@ class OnboardingService:
             raise ValueError(
                 f"No onboarding message defined for step: {step}"
             ) from exc
-
-
 
