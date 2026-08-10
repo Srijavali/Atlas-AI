@@ -1,5 +1,4 @@
-﻿
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import time
@@ -126,7 +125,8 @@ class OnboardingService:
                     "ASK_NAME",
                     (
                         "I didn't quite catch your name. 😊\n\n"
-                        "What should I call you?"
+                        "What should I call you?\n\n"
+                        "Example: Sri"
                     ),
                 )
 
@@ -162,10 +162,14 @@ class OnboardingService:
                     "ASK_ROLE",
                     (
                         "No worries. 😊\n\n"
-                        "Tell me a little about what you do "
-                        "or what you mainly work on.\n\n"
-                        "For example: student, investor, analyst, "
-                        "researcher, founder, or developer.\n\n"
+                        "What best describes you?\n\n"
+                        "Examples:\n"
+                        "• Student\n"
+                        "• Investor\n"
+                        "• Trader\n"
+                        "• Analyst\n"
+                        "• Founder\n"
+                        "• Researcher\n\n"
                         'You can also say "skip".'
                     ),
                 )
@@ -200,10 +204,16 @@ class OnboardingService:
                 return self._retry(
                     "ASK_INTERESTS",
                     (
-                        "Tell me at least one thing you're "
-                        "interested in. 😊\n\n"
-                        "For example: AI, technology, startups, "
-                        "stocks, research, or financial news.\n\n"
+                        "🎯 What topics are you interested in?\n\n"
+                        "Examples:\n"
+                        "• AI & technology\n"
+                        "• Startups\n"
+                        "• Fintech\n"
+                        "• Banking\n"
+                        "• Economics\n"
+                        "• Investing\n\n"
+                        "This helps Atlas prioritize news and "
+                        "insights relevant to you.\n\n"
                         'Or say "skip".'
                     ),
                 )
@@ -238,10 +248,19 @@ class OnboardingService:
                 return self._retry(
                     "ASK_MARKET_PREFERENCES",
                     (
-                        "Which markets or financial areas "
-                        "matter to you? 📊\n\n"
-                        "For example: Indian stocks, US stocks, "
-                        "ETFs, IPOs, crypto, sectors, or the economy.\n\n"
+                        "📊 Which markets or financial areas "
+                        "do you follow?\n\n"
+                        "Examples:\n"
+                        "• Indian stocks\n"
+                        "• US stocks\n"
+                        "• ETFs\n"
+                        "• IPOs\n"
+                        "• Crypto\n"
+                        "• Banking\n"
+                        "• Technology sector\n"
+                        "• Global markets\n\n"
+                        "This helps Atlas focus on the financial "
+                        "information you actually care about.\n\n"
                         'Or say "skip".'
                     ),
                 )
@@ -278,11 +297,19 @@ class OnboardingService:
                 return self._retry(
                     "ASK_WATCHLIST",
                     (
-                        "What should I keep an eye on for you? 🔎\n\n"
-                        "You can name companies, stocks, sectors, "
-                        "or markets.\n\n"
-                        "For example: NVIDIA, Microsoft, "
-                        "semiconductors, or Indian markets.\n\n"
+                        "👀 What should Atlas keep an eye on "
+                        "for you?\n\n"
+                        "You can mention companies, stocks, "
+                        "sectors, or markets.\n\n"
+                        "Examples:\n"
+                        "• NVIDIA\n"
+                        "• Tesla\n"
+                        "• Microsoft\n"
+                        "• Reliance\n"
+                        "• Indian IT sector\n"
+                        "• Semiconductor companies\n\n"
+                        "This helps make your research and updates "
+                        "more relevant.\n\n"
                         'Nothing specific? Say "skip".'
                     ),
                 )
@@ -319,12 +346,18 @@ class OnboardingService:
                 return self._retry(
                     "ASK_INSIGHT_PREFERENCES",
                     (
-                        "Got it. Now, when something important "
-                        "happens, what kind of information would "
-                        "actually be useful to you? 📰\n\n"
-                        "For example: earnings, company news, "
-                        "filings, M&A, funding, market-moving events, "
-                        "or macro news.\n\n"
+                        "📰 What kind of financial updates "
+                        "matter to you?\n\n"
+                        "Examples:\n"
+                        "• Earnings\n"
+                        "• SEC filings\n"
+                        "• Company news\n"
+                        "• Mergers & acquisitions\n"
+                        "• Funding announcements\n"
+                        "• Market-moving events\n"
+                        "• Economic news\n\n"
+                        "This helps Atlas understand what "
+                        "deserves your attention.\n\n"
                         'Or say "skip".'
                     ),
                 )
@@ -359,11 +392,18 @@ class OnboardingService:
                 return self._retry(
                     "ASK_ALERTS",
                     (
-                        "Almost there. 🔔\n\n"
-                        "What would you actually want Atlas "
+                        "🔔 What would you like Atlas "
                         "to alert you about?\n\n"
-                        "For example: earnings, company announcements, "
-                        "filings, funding events, or big market moves.\n\n"
+                        "Examples:\n"
+                        "• Earnings announcements\n"
+                        "• Major company news\n"
+                        "• SEC filings\n"
+                        "• Large market movements\n"
+                        "• Watchlist updates\n"
+                        "• Funding or acquisition events\n\n"
+                        "This lets Atlas bring important events "
+                        "to you instead of making you constantly "
+                        "check for them.\n\n"
                         'Or say "skip".'
                     ),
                 )
@@ -413,10 +453,16 @@ class OnboardingService:
                 return self._retry(
                     "ASK_DAILY_BRIEFING",
                     (
-                        "Would you like a daily briefing from Atlas? ☀️\n\n"
-                        "I'll keep it focused on the things "
-                        "you actually care about.\n\n"
-                        "Just say yes, no, or skip."
+                        "☀️ Would you like a personalized "
+                        "daily briefing?\n\n"
+                        "It can summarize the markets, "
+                        "companies, and topics you care about.\n\n"
+                        "Examples:\n"
+                        "• Market highlights\n"
+                        "• Watchlist updates\n"
+                        "• Important financial news\n"
+                        "• Major developments\n\n"
+                        "Reply with yes, no, or skip."
                     ),
                 )
 
@@ -463,8 +509,15 @@ class OnboardingService:
                 return self._retry(
                     "ASK_BRIEFING_TIME",
                     (
-                        "I couldn't quite understand that time. 😊\n\n"
-                        "Try something like 9 PM or 8:30 AM."
+                        "⏰ What time should I send "
+                        "your daily briefing?\n\n"
+                        "Examples:\n"
+                        "• 7:30 AM\n"
+                        "• 8:00 AM\n"
+                        "• 8:30 AM\n"
+                        "• 9:00 AM\n"
+                        "• 6:00 PM\n\n"
+                        "Choose whatever fits your routine."
                     ),
                 )
 
@@ -502,9 +555,16 @@ class OnboardingService:
                 return self._retry(
                     "ASK_TIMEZONE",
                     (
-                        "I couldn't recognize that timezone. 🌏\n\n"
-                        "For example: Asia/Kolkata, "
-                        "America/New_York, or Europe/London.\n\n"
+                        "🌍 Which timezone should Atlas use?\n\n"
+                        "Examples:\n"
+                        "• Asia/Kolkata\n"
+                        "• America/New_York\n"
+                        "• Europe/London\n"
+                        "• Asia/Singapore\n"
+                        "• Australia/Sydney\n\n"
+                        "This makes sure your briefings and "
+                        "scheduled alerts arrive at the right "
+                        "local time.\n\n"
                         'You can also say "skip".'
                     ),
                 )
@@ -550,7 +610,7 @@ class OnboardingService:
                     message=(
                         "Of course! 😊\n\n"
                         "Tell me what you'd like to change.\n\n"
-                        "For example:\n"
+                        "Examples:\n"
                         "• Change my interests\n"
                         "• Change my markets\n"
                         "• Change what I watch\n"
@@ -892,10 +952,12 @@ class OnboardingService:
                 lines.append(
                     f"   {display_name} · {role}"
                 )
+
             elif display_name:
                 lines.append(
                     f"   {display_name}"
                 )
+
             elif role:
                 lines.append(
                     f"   {role}"
@@ -969,6 +1031,11 @@ class OnboardingService:
         lines.extend([
             "────────────────────",
             "",
+            "🎯 Your Atlas profile is ready.",
+            "",
+            "These preferences help me personalize "
+            "your research, alerts, and briefings.",
+            "",
             "Does everything look right? 😊",
             "",
             'Say "yes" to finish, or tell me '
@@ -1016,92 +1083,151 @@ class OnboardingService:
 
         messages = {
             "WELCOME": (
-                "Hey! 👋 I'm Atlas.\n\n"
-                "I can help you with markets, companies, "
-                "financial news, research, documents, and more.\n\n"
-                "Let's get to know you a little first."
+                "👋 Hey! I'm Atlas.\n\n"
+                "I'll ask you a few quick questions so I can "
+                "personalize your financial research, alerts, "
+                "and briefings.\n\n"
+                "It takes about a minute. You can also skip "
+                "anything. 😊\n\n"
+                "Let's get started!"
             ),
 
             "ASK_NAME": (
-                "First things first 😊\n\n"
-                "What should I call you?"
+                "😊 What should I call you?\n\n"
+                "Example: Sri"
             ),
 
             "ASK_ROLE": (
                 "Nice to meet you! 👋\n\n"
-                "What do you do, or what kind of work "
-                "do you mainly focus on?\n\n"
-                "For example: student, investor, analyst, "
-                "researcher, founder, or developer.\n\n"
+                "What best describes you?\n\n"
+                "Examples:\n"
+                "• Student\n"
+                "• Investor\n"
+                "• Trader\n"
+                "• Analyst\n"
+                "• Founder\n"
+                "• Researcher\n\n"
+                "This helps me tailor the depth and style "
+                "of information I give you.\n\n"
                 'You can also say "skip".'
             ),
 
             "ASK_INTERESTS": (
-                "Got it! 🎯\n\n"
-                "What topics should I keep in mind when "
-                "helping you?\n\n"
-                "For example: AI, technology, startups, "
-                "stocks, research, financial news, or "
-                "anything else you follow.\n\n"
-                'Tell me as many as you like, or say "skip".'
+                "🎯 What topics are you interested in?\n\n"
+                "Examples:\n"
+                "• AI & technology\n"
+                "• Startups\n"
+                "• Fintech\n"
+                "• Banking\n"
+                "• Economics\n"
+                "• Investing\n\n"
+                "This helps Atlas prioritize news and "
+                "insights relevant to you.\n\n"
+                'Or say "skip".'
             ),
 
             "ASK_MARKET_PREFERENCES": (
-                "Now let's make the market side more useful. 📊\n\n"
-                "Which markets or financial areas do you care about?\n\n"
-                "For example: Indian stocks, US stocks, ETFs, "
-                "IPOs, crypto, sectors, or the economy.\n\n"
-                'You can also say "skip".'
+                "📊 Which markets or financial areas "
+                "do you follow?\n\n"
+                "Examples:\n"
+                "• Indian stocks\n"
+                "• US stocks\n"
+                "• ETFs\n"
+                "• IPOs\n"
+                "• Crypto\n"
+                "• Banking\n"
+                "• Technology sector\n"
+                "• Global markets\n\n"
+                "This helps Atlas focus on the financial "
+                "information you actually care about.\n\n"
+                'Or say "skip".'
             ),
 
             "ASK_WATCHLIST": (
-                "Let's set up what I should keep an eye on. 🔎\n\n"
-                "Which companies, stocks, sectors, or markets "
-                "would you like me to follow?\n\n"
-                "For example: NVIDIA, Microsoft, semiconductors, "
-                "or Indian markets.\n\n"
-                "We'll use this together with your insight and "
-                "alert preferences to make updates more relevant.\n\n"
-                'Nothing specific? Just say "skip".'
+                "👀 What should Atlas keep an eye on "
+                "for you?\n\n"
+                "You can mention companies, stocks, "
+                "sectors, or markets.\n\n"
+                "Examples:\n"
+                "• NVIDIA\n"
+                "• Tesla\n"
+                "• Microsoft\n"
+                "• Reliance\n"
+                "• Indian IT sector\n"
+                "• Semiconductor companies\n\n"
+                "This helps make your research and updates "
+                "more relevant.\n\n"
+                'Nothing specific? Say "skip".'
             ),
 
             "ASK_INSIGHT_PREFERENCES": (
-                "Great. 📰\n\n"
-                "When something important happens, what kind "
-                "of information would actually be useful to you?\n\n"
-                "For example: earnings, company news, filings, "
-                "M&A, funding, market-moving events, or macro news.\n\n"
-                'Tell me what matters most, or say "skip".'
+                "📰 What kind of financial updates "
+                "matter to you?\n\n"
+                "Examples:\n"
+                "• Earnings\n"
+                "• SEC filings\n"
+                "• Company news\n"
+                "• Mergers & acquisitions\n"
+                "• Funding announcements\n"
+                "• Market-moving events\n"
+                "• Economic news\n\n"
+                "This helps Atlas understand what "
+                "deserves your attention.\n\n"
+                'Or say "skip".'
             ),
 
             "ASK_ALERTS": (
-                "Perfect. One last part of the monitoring setup. 🔔\n\n"
-                "What would you want Atlas to actively alert "
-                "you about?\n\n"
-                "For example: earnings, company announcements, "
-                "filings, funding events, or big market moves.\n\n"
-                'You can add your own, or say "skip".'
+                "🔔 What would you like Atlas "
+                "to alert you about?\n\n"
+                "Examples:\n"
+                "• Earnings announcements\n"
+                "• Major company news\n"
+                "• SEC filings\n"
+                "• Large market movements\n"
+                "• Watchlist updates\n"
+                "• Funding or acquisition events\n\n"
+                "This lets Atlas bring important events "
+                "to you instead of making you constantly "
+                "check for them.\n\n"
+                'Or say "skip".'
             ),
 
             "ASK_DAILY_BRIEFING": (
-                "One more thing ☀️\n\n"
-                "Would you like a daily briefing from Atlas?\n\n"
-                "I'll keep it focused on the things you actually care about.\n\n"
-                "Just say yes, no, or skip."
+                "☀️ Would you like a personalized "
+                "daily briefing?\n\n"
+                "It can summarize the markets, companies, "
+                "and topics you care about.\n\n"
+                "Examples:\n"
+                "• Market highlights\n"
+                "• Watchlist updates\n"
+                "• Important financial news\n"
+                "• Major developments\n\n"
+                "Reply with yes, no, or skip."
             ),
 
             "ASK_BRIEFING_TIME": (
-                "Perfect! ⏰\n\n"
-                "What time would you like your daily briefing?\n\n"
-                "For example: 8 AM, 8:30 AM, or 9 PM."
+                "⏰ What time should I send "
+                "your daily briefing?\n\n"
+                "Examples:\n"
+                "• 7:30 AM\n"
+                "• 8:00 AM\n"
+                "• 8:30 AM\n"
+                "• 9:00 AM\n"
+                "• 6:00 PM\n\n"
+                "Choose whatever fits your routine."
             ),
 
             "ASK_TIMEZONE": (
-                "Almost done! 🌏\n\n"
-                "Which timezone should I use for your "
-                "briefings and alerts?\n\n"
-                "For example: Asia/Kolkata, America/New_York, "
-                "or Europe/London.\n\n"
+                "🌍 Which timezone should Atlas use?\n\n"
+                "Examples:\n"
+                "• Asia/Kolkata\n"
+                "• America/New_York\n"
+                "• Europe/London\n"
+                "• Asia/Singapore\n"
+                "• Australia/Sydney\n\n"
+                "This makes sure your briefings and "
+                "scheduled alerts arrive at the right "
+                "local time.\n\n"
                 'You can also say "skip".'
             ),
         }
@@ -1113,4 +1239,3 @@ class OnboardingService:
             raise ValueError(
                 f"No onboarding message defined for step: {step}"
             ) from exc
-
