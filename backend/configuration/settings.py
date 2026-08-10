@@ -2,7 +2,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 
-class Settings(BaseSettings):
+class Settings(
+    BaseSettings
+):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -12,7 +14,7 @@ class Settings(BaseSettings):
     GROQ_SPEECH_MODEL: str = "whisper-large-v3-turbo"
 
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/atlas_ai",
+        default="postgresql+asyncpg://postgres:postgres@localhost:5433/atlas_ai",
         description="Async PostgreSQL database connection URL",
     )
 
@@ -37,8 +39,8 @@ class Settings(BaseSettings):
     )
 
     OPENAI_API_KEYS: str = Field(
-    default="",
-    description="Comma-separated OpenAI API keys used for credential failover",
+        default="",
+        description="Comma-separated OpenAI API keys used for credential failover",
     )
 
     OPENAI_MODEL: str = Field(
@@ -47,8 +49,8 @@ class Settings(BaseSettings):
     )
 
     GROQ_API_KEY: str = Field(
-    default="",
-    description="Groq API key",
+        default="",
+        description="Groq API key",
     )
 
     GROQ_MODEL: str = Field(
@@ -62,8 +64,8 @@ class Settings(BaseSettings):
     )
 
     TWELVE_DATA_API_KEY: str = Field(
-    default="",
-    description="Twelve Data API key",
+        default="",
+        description="Twelve Data API key",
     )
 
     ENVIRONMENT: str = Field(
@@ -88,7 +90,10 @@ class Settings(BaseSettings):
 
     @property
     def is_production(self) -> bool:
-        return self.ENVIRONMENT.lower() in ("production", "prod")
+        return self.ENVIRONMENT.lower() in (
+            "production",
+            "prod",
+        )
 
 
 settings = Settings()

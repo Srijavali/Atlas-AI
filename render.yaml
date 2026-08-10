@@ -20,14 +20,44 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
 
-      - key: GROQ_API_KEY
+      - key: GEMINI_API_KEYS
         sync: false
 
-      - key: GEMINI_API_KEYS
+      - key: GROQ_API_KEY
         sync: false
 
       - key: TWELVE_DATA_API_KEY
         sync: false
+
+      - key: SEC_USER_AGENT
+        sync: false
+
+      - key: OPENAI_API_KEYS
+        sync: false
+
+      - key: WEBHOOK_SECRET
+        sync: false
+
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+
+      - key: GEMINI_FALLBACK_MODEL
+        value: gemini-3.5-flash-lite
+
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+
+      - key: GROQ_SPEECH_MODEL
+        value: whisper-large-v3-turbo
+
+      - key: OPENAI_MODEL
+        value: gpt-5-mini
+
+      - key: ENVIRONMENT
+        value: production
+
+      - key: LOG_LEVEL
+        value: INFO
 
 databases:
   - name: atlas-db
