@@ -1,9 +1,6 @@
-
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from telegram import Bot
 
-from backend.configuration.settings import settings
 from backend.persistence.database import get_db_session
 from backend.persistence.repositories import (
     OnboardingRepository,
@@ -40,10 +37,88 @@ from backend.infrastructure.llm import GroqRouter
 from backend.infrastructure.speech.groq_speech import (
     GroqSpeechToText,
 )
+
 from backend.modules.scheduler.service import SchedulerService
+
+
+# ============================================================
+# TELEGRAM BOT
+# ============================================================
+
+def get_telegram_bot(request: Request):
+    """
+    Returns the single application-level Telegram Bot instance.
+
+    The Bot is created and initialized once during FastAPI
+    startup in main.py.
+
+    We must NOT create Bot() separately for every request.
+    """
+
+    telegram_bot = getattr(
+        request.app.state,
+        "telegram_bot",
+        None,
+    )
+
+    if telegram_bot is None:
+        raise RuntimeError(
+            "Telegram Bot is not initialized"
+        )
+
+    return telegram_bot
+
+
+def get_telegram_sender(
+    request: Request,
+) -> TelegramSender:
+    """
+    Returns the application-level TelegramSender.
+
+    TelegramSender uses the same long-lived Bot instance
+    created during FastAPI startup.
+    """
+
+    telegram_sender = getattr(
+        request.app.state,
+        "telegram_sender",
+        None,
+    )
+
+    if telegram_sender is None:
+        raise RuntimeError(
+            "TelegramSender is not initialized"
+        )
+
+    return telegram_sender
+
+
+def get_telegram_media_fetcher(
+    request: Request,
+) -> TelegramMediaFetcher:
+    """
+    Returns a TelegramMediaFetcher using the same
+    application-level Telegram Bot instance.
+    """
+
+    telegram_bot = get_telegram_bot(request)
+
+    return TelegramMediaFetcher(
+        telegram_bot
+    )
+
+
+# ============================================================
+# SCHEDULER
+# ============================================================
+
 def get_scheduler_service(
     request: Request,
 ) -> SchedulerService:
+    """
+    Returns the application-level SchedulerService.
+    """
+
     scheduler_service = getattr(
         request.app.state,
         "scheduler_service",
@@ -58,16 +133,9 @@ def get_scheduler_service(
     return scheduler_service
 
 
-def get_telegram_media_fetcher() -> TelegramMediaFetcher:
-    if not settings.TELEGRAM_BOT_TOKEN:
-        raise RuntimeError(
-            "TELEGRAM_BOT_TOKEN is not configured"
-        )
-
-    return TelegramMediaFetcher(
-        Bot(token=settings.TELEGRAM_BOT_TOKEN)
-    )
-
+# ============================================================
+# DATABASE REPOSITORIES
+# ============================================================
 
 def get_user_repository(
     session: AsyncSession = Depends(get_db_session),
@@ -87,6 +155,10 @@ def get_profile_repository(
     return ProfileRepository(session)
 
 
+# ============================================================
+# ONBOARDING
+# ============================================================
+
 def get_onboarding_service(
     user_repository: UserRepository = Depends(
         get_user_repository
@@ -98,12 +170,17 @@ def get_onboarding_service(
         get_profile_repository
     ),
 ) -> OnboardingService:
+
     return OnboardingService(
         onboarding_repository=onboarding_repository,
         user_repository=user_repository,
         profile_repository=profile_repository,
     )
 
+
+# ============================================================
+# IMAGE PROCESSING
+# ============================================================
 
 def get_image_processor() -> ImageProcessor:
     """
@@ -112,6 +189,10 @@ def get_image_processor() -> ImageProcessor:
 
     return ImageProcessor()
 
+
+# ============================================================
+# VISION PROCESSING
+# ============================================================
 
 def get_vision_processor() -> VisionProcessor:
     """
@@ -123,19 +204,21 @@ def get_vision_processor() -> VisionProcessor:
     )
 
 
+# ============================================================
+# PREPROCESSING
+# ============================================================
+
 def get_preprocessing_service() -> PreprocessingService:
     """
-    Provides the preprocessing service.
+    Provides the Atlas preprocessing service.
 
     Enabled:
-
         - Text normalization
         - Document processing
         - Image processing
         - Vision processing
 
     Disabled:
-
         - OCR
         - Legacy preprocessing SpeechProcessor
 
@@ -144,10 +227,13 @@ def get_preprocessing_service() -> PreprocessingService:
     """
 
     class DisabledProcessor:
+
         def __getattr__(self, name: str):
+
             def unavailable(*args, **kwargs):
                 raise RuntimeError(
-                    f"{name} processor is not enabled in the MVP runtime"
+                    f"{name} processor is not enabled "
+                    "in the MVP runtime"
                 )
 
             return unavailable
@@ -162,6 +248,10 @@ def get_preprocessing_service() -> PreprocessingService:
     )
 
 
+# ============================================================
+# GROQ ROUTER
+# ============================================================
+
 def get_groq_router() -> GroqRouter:
     """
     Provides the Atlas Groq LLM router.
@@ -169,6 +259,10 @@ def get_groq_router() -> GroqRouter:
 
     return GroqRouter()
 
+
+# ============================================================
+# ATLAS BRAIN
+# ============================================================
 
 def get_atlas_agent(
     groq_router: GroqRouter = Depends(
@@ -184,13 +278,22 @@ def get_atlas_agent(
     )
 
 
+# ============================================================
+# SPEECH TO TEXT
+# ============================================================
+
 def get_speech_to_text() -> GroqSpeechToText:
     """
-    Provides Groq speech-to-text for Telegram voice messages.
+    Provides Groq speech-to-text for Telegram
+    voice messages.
     """
 
     return GroqSpeechToText()
 
+
+# ============================================================
+# TELEGRAM PARSER / ADAPTER
+# ============================================================
 
 def get_telegram_parser() -> TelegramParser:
     return TelegramParser()
@@ -200,16 +303,9 @@ def get_telegram_adapter() -> TelegramAdapter:
     return TelegramAdapter()
 
 
-def get_telegram_sender() -> TelegramSender:
-    if not settings.TELEGRAM_BOT_TOKEN:
-        raise RuntimeError(
-            "TELEGRAM_BOT_TOKEN is not configured"
-        )
-
-    return TelegramSender(
-        Bot(token=settings.TELEGRAM_BOT_TOKEN)
-    )
-
+# ============================================================
+# COMMUNICATION SERVICE
+# ============================================================
 
 def get_communication_service(
     user_repository: UserRepository = Depends(
@@ -233,10 +329,11 @@ def get_communication_service(
     atlas_agent: AtlasAgent = Depends(
         get_atlas_agent
     ),
-    scheduler_service=Depends(
+    scheduler_service: SchedulerService = Depends(
         get_scheduler_service
     ),
 ) -> CommunicationService:
+
     return CommunicationService(
         user_repository=user_repository,
         onboarding_repository=onboarding_repository,
@@ -247,4 +344,3 @@ def get_communication_service(
         atlas_agent=atlas_agent,
         scheduler_service=scheduler_service,
     )
-
