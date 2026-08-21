@@ -170,12 +170,12 @@ async def test_welcome_moves_to_name_step(
 
 
 # ============================================================
-# NAME
+# NAME -> INTERESTS
 # ============================================================
 
 
 @pytest.mark.asyncio
-async def test_name_is_saved_and_role_is_requested(
+async def test_name_is_saved_and_interests_are_requested(
     service,
     onboarding_repository,
 ):
@@ -190,14 +190,14 @@ async def test_name_is_saved_and_role_is_requested(
 
     call = onboarding_repository.update_step_data.await_args
 
-    assert call.kwargs["current_step"] == "ASK_ROLE"
+    assert call.kwargs["current_step"] == "ASK_INTERESTS"
 
     assert (
         call.kwargs["temporary_data"]["display_name"]
         == "Sri"
     )
 
-    assert result.step == "ASK_ROLE"
+    assert result.step == "ASK_INTERESTS"
 
 
 @pytest.mark.asyncio
@@ -222,71 +222,12 @@ async def test_empty_name_is_rejected(
 
 
 # ============================================================
-# ROLE
-# ============================================================
-
-
-@pytest.mark.asyncio
-async def test_role_is_saved_and_interests_are_requested(
-    service,
-    onboarding_repository,
-):
-    session = make_session(
-        current_step="ASK_ROLE",
-        temporary_data={
-            "display_name": "Sri",
-        },
-    )
-
-    result = await service.handle_response(
-        session=session,
-        response="Analyst",
-    )
-
-    call = onboarding_repository.update_step_data.await_args
-
-    assert call.kwargs["current_step"] == "ASK_INTERESTS"
-
-    assert (
-        call.kwargs["temporary_data"]["role"]
-        == "Analyst"
-    )
-
-    assert result.step == "ASK_INTERESTS"
-
-
-@pytest.mark.asyncio
-async def test_role_can_be_skipped(
-    service,
-    onboarding_repository,
-):
-    session = make_session(
-        current_step="ASK_ROLE",
-        temporary_data={
-            "display_name": "Sri",
-        },
-    )
-
-    result = await service.handle_response(
-        session=session,
-        response="skip",
-    )
-
-    call = onboarding_repository.update_step_data.await_args
-
-    assert call.kwargs["current_step"] == "ASK_INTERESTS"
-    assert call.kwargs["temporary_data"]["role"] is None
-
-    assert result.step == "ASK_INTERESTS"
-
-
-# ============================================================
 # INTERESTS
 # ============================================================
 
 
 @pytest.mark.asyncio
-async def test_interests_are_saved_and_market_preferences_are_requested(
+async def test_interests_are_saved_and_watchlist_is_requested(
     service,
     onboarding_repository,
 ):
@@ -294,7 +235,6 @@ async def test_interests_are_saved_and_market_preferences_are_requested(
         current_step="ASK_INTERESTS",
         temporary_data={
             "display_name": "Sri",
-            "role": "Analyst",
         },
     )
 
@@ -305,9 +245,7 @@ async def test_interests_are_saved_and_market_preferences_are_requested(
 
     call = onboarding_repository.update_step_data.await_args
 
-    assert call.kwargs["current_step"] == (
-        "ASK_MARKET_PREFERENCES"
-    )
+    assert call.kwargs["current_step"] == "ASK_WATCHLIST"
 
     assert call.kwargs["temporary_data"]["interests"] == [
         "AI",
@@ -315,7 +253,7 @@ async def test_interests_are_saved_and_market_preferences_are_requested(
         "startups",
     ]
 
-    assert result.step == "ASK_MARKET_PREFERENCES"
+    assert result.step == "ASK_WATCHLIST"
 
 
 @pytest.mark.asyncio
@@ -339,7 +277,7 @@ async def test_interests_support_custom_free_text(
         "renewable energy",
     ]
 
-    assert result.step == "ASK_MARKET_PREFERENCES"
+    assert result.step == "ASK_WATCHLIST"
 
 
 @pytest.mark.asyncio
@@ -358,68 +296,9 @@ async def test_interests_can_be_skipped(
 
     call = onboarding_repository.update_step_data.await_args
 
-    assert call.kwargs["current_step"] == (
-        "ASK_MARKET_PREFERENCES"
-    )
-
-    assert call.kwargs["temporary_data"]["interests"] == []
-
-    assert result.step == "ASK_MARKET_PREFERENCES"
-
-
-# ============================================================
-# MARKET PREFERENCES
-# ============================================================
-
-
-@pytest.mark.asyncio
-async def test_market_preferences_are_saved(
-    service,
-    onboarding_repository,
-):
-    session = make_session(
-        current_step="ASK_MARKET_PREFERENCES",
-    )
-
-    result = await service.handle_response(
-        session=session,
-        response="Stocks, ETFs, macroeconomics",
-    )
-
-    call = onboarding_repository.update_step_data.await_args
-
     assert call.kwargs["current_step"] == "ASK_WATCHLIST"
 
-    assert call.kwargs["temporary_data"][
-        "market_preferences"
-    ] == [
-        "Stocks",
-        "ETFs",
-        "macroeconomics",
-    ]
-
-    assert result.step == "ASK_WATCHLIST"
-
-
-@pytest.mark.asyncio
-async def test_market_preferences_can_be_skipped(
-    service,
-    onboarding_repository,
-):
-    session = make_session(
-        current_step="ASK_MARKET_PREFERENCES",
-    )
-
-    result = await service.handle_response(
-        session=session,
-        response="skip",
-    )
-
-    call = onboarding_repository.update_step_data.await_args
-
-    assert call.kwargs["temporary_data"][
-        "market_preferences"
-    ] == []
+    assert call.kwargs["temporary_data"]["interests"] == []
 
     assert result.step == "ASK_WATCHLIST"
 
@@ -430,7 +309,7 @@ async def test_market_preferences_can_be_skipped(
 
 
 @pytest.mark.asyncio
-async def test_watchlist_is_saved_and_insight_preferences_are_requested(
+async def test_watchlist_is_saved_and_daily_briefing_is_requested(
     service,
     onboarding_repository,
 ):
@@ -445,9 +324,7 @@ async def test_watchlist_is_saved_and_insight_preferences_are_requested(
 
     call = onboarding_repository.update_step_data.await_args
 
-    assert call.kwargs["current_step"] == (
-        "ASK_INSIGHT_PREFERENCES"
-    )
+    assert call.kwargs["current_step"] == "ASK_DAILY_BRIEFING"
 
     assert call.kwargs["temporary_data"][
         "tracked_entities"
@@ -457,7 +334,7 @@ async def test_watchlist_is_saved_and_insight_preferences_are_requested(
         "semiconductors",
     ]
 
-    assert result.step == "ASK_INSIGHT_PREFERENCES"
+    assert result.step == "ASK_DAILY_BRIEFING"
 
 
 @pytest.mark.asyncio
@@ -480,7 +357,7 @@ async def test_watchlist_can_be_skipped(
         "tracked_entities"
     ] == []
 
-    assert result.step == "ASK_INSIGHT_PREFERENCES"
+    assert result.step == "ASK_DAILY_BRIEFING"
 
 
 @pytest.mark.asyncio
@@ -507,121 +384,6 @@ async def test_custom_watchlist_input_is_supported(
         "semiconductor companies",
     ]
 
-    assert result.step == "ASK_INSIGHT_PREFERENCES"
-
-
-# ============================================================
-# INSIGHT PREFERENCES
-# ============================================================
-
-
-@pytest.mark.asyncio
-async def test_insight_preferences_are_saved(
-    service,
-    onboarding_repository,
-):
-    session = make_session(
-        current_step="ASK_INSIGHT_PREFERENCES",
-    )
-
-    result = await service.handle_response(
-        session=session,
-        response="Earnings, filings, company news",
-    )
-
-    call = onboarding_repository.update_step_data.await_args
-
-    assert call.kwargs["current_step"] == "ASK_ALERTS"
-
-    assert call.kwargs["temporary_data"][
-        "insight_preferences"
-    ] == [
-        "Earnings",
-        "filings",
-        "company news",
-    ]
-
-    assert result.step == "ASK_ALERTS"
-
-
-@pytest.mark.asyncio
-async def test_insight_preferences_can_be_skipped(
-    service,
-    onboarding_repository,
-):
-    session = make_session(
-        current_step="ASK_INSIGHT_PREFERENCES",
-    )
-
-    result = await service.handle_response(
-        session=session,
-        response="skip",
-    )
-
-    call = onboarding_repository.update_step_data.await_args
-
-    assert call.kwargs["temporary_data"][
-        "insight_preferences"
-    ] == []
-
-    assert result.step == "ASK_ALERTS"
-
-
-# ============================================================
-# ALERTS
-# ============================================================
-
-
-@pytest.mark.asyncio
-async def test_alert_preferences_are_saved(
-    service,
-    onboarding_repository,
-):
-    session = make_session(
-        current_step="ASK_ALERTS",
-    )
-
-    result = await service.handle_response(
-        session=session,
-        response="Earnings, large market moves",
-    )
-
-    call = onboarding_repository.update_step_data.await_args
-
-    assert call.kwargs["current_step"] == (
-        "ASK_DAILY_BRIEFING"
-    )
-
-    assert call.kwargs["temporary_data"][
-        "alert_preferences"
-    ] == [
-        "Earnings",
-        "large market moves",
-    ]
-
-    assert result.step == "ASK_DAILY_BRIEFING"
-
-
-@pytest.mark.asyncio
-async def test_alert_preferences_can_be_skipped(
-    service,
-    onboarding_repository,
-):
-    session = make_session(
-        current_step="ASK_ALERTS",
-    )
-
-    result = await service.handle_response(
-        session=session,
-        response="skip",
-    )
-
-    call = onboarding_repository.update_step_data.await_args
-
-    assert call.kwargs["temporary_data"][
-        "alert_preferences"
-    ] == []
-
     assert result.step == "ASK_DAILY_BRIEFING"
 
 
@@ -646,13 +408,12 @@ async def test_daily_briefing_yes_requests_briefing_time(
 
     call = onboarding_repository.update_step_data.await_args
 
-    assert call.kwargs["current_step"] == (
-        "ASK_BRIEFING_TIME"
-    )
+    assert call.kwargs["current_step"] == "ASK_BRIEFING_TIME"
 
-    assert call.kwargs["temporary_data"][
-        "briefing_enabled"
-    ] is True
+    assert (
+        call.kwargs["temporary_data"]["briefing_enabled"]
+        is True
+    )
 
     assert result.step == "ASK_BRIEFING_TIME"
 
@@ -675,13 +436,15 @@ async def test_daily_briefing_no_skips_to_timezone(
 
     assert call.kwargs["current_step"] == "ASK_TIMEZONE"
 
-    assert call.kwargs["temporary_data"][
-        "briefing_enabled"
-    ] is False
+    assert (
+        call.kwargs["temporary_data"]["briefing_enabled"]
+        is False
+    )
 
-    assert call.kwargs["temporary_data"][
-        "briefing_time"
-    ] is None
+    assert (
+        call.kwargs["temporary_data"]["briefing_time"]
+        is None
+    )
 
     assert result.step == "ASK_TIMEZONE"
 
@@ -732,9 +495,10 @@ async def test_briefing_time_is_parsed(
 
     assert call.kwargs["current_step"] == "ASK_TIMEZONE"
 
-    assert call.kwargs["temporary_data"][
-        "briefing_time"
-    ] == "20:30:00"
+    assert (
+        call.kwargs["temporary_data"]["briefing_time"]
+        == "20:30:00"
+    )
 
     assert result.step == "ASK_TIMEZONE"
 
@@ -790,9 +554,10 @@ async def test_timezone_is_validated_and_confirmation_is_requested(
 
     assert call.kwargs["current_step"] == "CONFIRM"
 
-    assert call.kwargs["temporary_data"][
-        "timezone"
-    ] == "Asia/Kolkata"
+    assert (
+        call.kwargs["temporary_data"]["timezone"]
+        == "Asia/Kolkata"
+    )
 
     assert result.step == "CONFIRM"
 
@@ -821,6 +586,110 @@ async def test_invalid_timezone_is_rejected(
 
 
 # ============================================================
+# LEGACY STEP REDIRECTS
+# ============================================================
+
+
+@pytest.mark.asyncio
+async def test_legacy_role_step_redirects_to_interests(
+    service,
+    onboarding_repository,
+):
+    session = make_session(
+        current_step="ASK_ROLE",
+        temporary_data={
+            "display_name": "Sri",
+        },
+    )
+
+    result = await service.handle_response(
+        session=session,
+        response="Analyst",
+    )
+
+    call = onboarding_repository.update_step_data.await_args
+
+    assert call.kwargs["current_step"] == "ASK_INTERESTS"
+
+    assert result.step == "ASK_INTERESTS"
+
+
+@pytest.mark.asyncio
+async def test_legacy_market_preferences_redirect_to_watchlist(
+    service,
+    onboarding_repository,
+):
+    session = make_session(
+        current_step="ASK_MARKET_PREFERENCES",
+        temporary_data={
+            "display_name": "Sri",
+            "interests": ["AI"],
+        },
+    )
+
+    result = await service.handle_response(
+        session=session,
+        response="Stocks, ETFs",
+    )
+
+    call = onboarding_repository.update_step_data.await_args
+
+    assert call.kwargs["current_step"] == "ASK_WATCHLIST"
+
+    assert result.step == "ASK_WATCHLIST"
+
+
+@pytest.mark.asyncio
+async def test_legacy_insight_preferences_redirect_to_daily_briefing(
+    service,
+    onboarding_repository,
+):
+    session = make_session(
+        current_step="ASK_INSIGHT_PREFERENCES",
+        temporary_data={
+            "display_name": "Sri",
+            "tracked_entities": ["NVIDIA"],
+        },
+    )
+
+    result = await service.handle_response(
+        session=session,
+        response="Earnings, filings",
+    )
+
+    call = onboarding_repository.update_step_data.await_args
+
+    assert call.kwargs["current_step"] == "ASK_DAILY_BRIEFING"
+
+    assert result.step == "ASK_DAILY_BRIEFING"
+
+
+@pytest.mark.asyncio
+async def test_legacy_alerts_redirect_to_daily_briefing(
+    service,
+    onboarding_repository,
+):
+    session = make_session(
+        current_step="ASK_ALERTS",
+        temporary_data={
+            "display_name": "Sri",
+            "tracked_entities": ["NVIDIA"],
+        },
+    )
+
+    result = await service.handle_response(
+        session=session,
+        response="Company news",
+    )
+
+    call = onboarding_repository.update_step_data.await_args
+
+    assert call.kwargs["current_step"] == "ASK_DAILY_BRIEFING"
+
+    assert result.step == "ASK_DAILY_BRIEFING"
+
+
+# ============================================================
 # CONFIRMATION
 # ============================================================
 
@@ -836,25 +705,13 @@ async def test_confirmation_yes_completes_onboarding(
         current_step="CONFIRM",
         temporary_data={
             "display_name": "Sri",
-            "role": "Analyst",
             "interests": [
                 "AI",
                 "technology",
             ],
-            "market_preferences": [
-                "Stocks",
-                "ETFs",
-            ],
             "tracked_entities": [
                 "NVIDIA",
                 "Microsoft",
-            ],
-            "insight_preferences": [
-                "Earnings",
-                "filings",
-            ],
-            "alert_preferences": [
-                "Company announcements",
             ],
             "briefing_enabled": True,
             "briefing_time": "20:30:00",
@@ -879,26 +736,18 @@ async def test_confirmation_yes_completes_onboarding(
 
     profile_repository.create_or_update_profile.assert_awaited_once_with(
         user_id=session.user_id,
-        role="Analyst",
+        role=None,
         interests=[
             "AI",
             "technology",
         ],
-        market_preferences=[
-            "Stocks",
-            "ETFs",
-        ],
+        market_preferences=[],
         tracked_entities=[
             "NVIDIA",
             "Microsoft",
         ],
-        insight_preferences=[
-            "Earnings",
-            "filings",
-        ],
-        alert_preferences=[
-            "Company announcements",
-        ],
+        insight_preferences=[],
+        alert_preferences=[],
         briefing_enabled=True,
         briefing_time=service._parse_stored_time(
             "20:30:00"
@@ -939,25 +788,13 @@ def test_confirmation_message_shows_user_preferences(
         current_step="CONFIRM",
         temporary_data={
             "display_name": "Sri",
-            "role": "Analyst",
             "interests": [
                 "AI",
                 "technology",
             ],
-            "market_preferences": [
-                "Stocks",
-                "ETFs",
-            ],
             "tracked_entities": [
                 "NVIDIA",
                 "Microsoft",
-            ],
-            "insight_preferences": [
-                "Earnings",
-                "filings",
-            ],
-            "alert_preferences": [
-                "Company announcements",
             ],
             "briefing_enabled": True,
             "briefing_time": "20:30:00",
@@ -971,15 +808,10 @@ def test_confirmation_message_shows_user_preferences(
     )
 
     assert "Sri" in message
-    assert "Analyst" in message
     assert "AI" in message
     assert "technology" in message
-    assert "Stocks" in message
-    assert "ETFs" in message
     assert "NVIDIA" in message
     assert "Microsoft" in message
-    assert "Earnings" in message
-    assert "Company announcements" in message
     assert "Asia/Kolkata" in message
     assert "yes" in message.lower()
 
@@ -1010,7 +842,7 @@ async def test_duplicate_custom_values_are_removed(
         "startups",
     ]
 
-    assert result.step == "ASK_MARKET_PREFERENCES"
+    assert result.step == "ASK_WATCHLIST"
 
 
 # ============================================================
@@ -1027,4 +859,4 @@ def test_completion_message_is_warm(
 
     assert "all set" in message.lower()
     assert "Atlas" in message
-    assert "change" in message.lower()
+    assert "ready" in message.lower()

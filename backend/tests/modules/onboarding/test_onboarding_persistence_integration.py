@@ -1,4 +1,3 @@
-
 import time
 
 import pytest
@@ -22,29 +21,26 @@ from backend.persistence.repositories.user_repository import (
 @pytest.mark.asyncio
 async def test_onboarding_persists_end_to_end():
     """
-    Verify the complete finance-focused onboarding flow.
+    Verify the complete first-interaction onboarding flow.
 
     Flow:
 
         WELCOME
         -> ASK_NAME
-        -> ASK_ROLE
         -> ASK_INTERESTS
-        -> ASK_MARKET_PREFERENCES
         -> ASK_WATCHLIST
-        -> ASK_INSIGHT_PREFERENCES
-        -> ASK_ALERTS
         -> ASK_DAILY_BRIEFING
         -> ASK_BRIEFING_TIME
         -> ASK_TIMEZONE
         -> CONFIRM
         -> COMPLETED
 
-    The test verifies that all collected onboarding data is
-    persisted correctly to PostgreSQL.
+    The test verifies that the onboarding data collected by the
+    current Atlas onboarding flow is correctly persisted to PostgreSQL.
     """
 
     async with AsyncSessionFactory() as session:
+
         user_repository = UserRepository(session)
         onboarding_repository = OnboardingRepository(session)
         profile_repository = ProfileRepository(session)
@@ -103,36 +99,12 @@ async def test_onboarding_persists_end_to_end():
         assert onboarding_session.current_step == "ASK_NAME"
 
         # =========================================================
-        # ASK_NAME -> ASK_ROLE
+        # ASK_NAME -> ASK_INTERESTS
         # =========================================================
 
         result = await service.handle_response(
             session=onboarding_session,
             response="Sri",
-        )
-
-        assert result.step == "ASK_ROLE"
-        assert result.completed is False
-
-        onboarding_session = (
-            await onboarding_repository.get_by_user_id(user.id)
-        )
-
-        assert onboarding_session is not None
-        assert onboarding_session.current_step == "ASK_ROLE"
-
-        assert (
-            onboarding_session.temporary_data["display_name"]
-            == "Sri"
-        )
-
-        # =========================================================
-        # ASK_ROLE -> ASK_INTERESTS
-        # =========================================================
-
-        result = await service.handle_response(
-            session=onboarding_session,
-            response="Student and investor",
         )
 
         assert result.step == "ASK_INTERESTS"
@@ -146,46 +118,17 @@ async def test_onboarding_persists_end_to_end():
         assert onboarding_session.current_step == "ASK_INTERESTS"
 
         assert (
-            onboarding_session.temporary_data["role"]
-            == "Student and investor"
+            onboarding_session.temporary_data["display_name"]
+            == "Sri"
         )
 
         # =========================================================
-        # ASK_INTERESTS -> ASK_MARKET_PREFERENCES
-        # =========================================================
-
-        result = await service.handle_response(
-            session=onboarding_session,
-            response="AI, technology, startups, financial news",
-        )
-
-        assert result.step == "ASK_MARKET_PREFERENCES"
-        assert result.completed is False
-
-        onboarding_session = (
-            await onboarding_repository.get_by_user_id(user.id)
-        )
-
-        assert onboarding_session is not None
-        assert (
-            onboarding_session.current_step
-            == "ASK_MARKET_PREFERENCES"
-        )
-
-        assert onboarding_session.temporary_data["interests"] == [
-            "AI",
-            "technology",
-            "startups",
-            "financial news",
-        ]
-
-        # =========================================================
-        # ASK_MARKET_PREFERENCES -> ASK_WATCHLIST
+        # ASK_INTERESTS -> ASK_WATCHLIST
         # =========================================================
 
         result = await service.handle_response(
             session=onboarding_session,
-            response="Indian equities, ETFs, IPOs",
+            response="AI, technology, startups",
         )
 
         assert result.step == "ASK_WATCHLIST"
@@ -198,78 +141,19 @@ async def test_onboarding_persists_end_to_end():
         assert onboarding_session is not None
         assert onboarding_session.current_step == "ASK_WATCHLIST"
 
-        assert onboarding_session.temporary_data[
-            "market_preferences"
-        ] == [
-            "Indian equities",
-            "ETFs",
-            "IPOs",
+        assert onboarding_session.temporary_data["interests"] == [
+            "AI",
+            "technology",
+            "startups",
         ]
 
         # =========================================================
-        # ASK_WATCHLIST -> ASK_INSIGHT_PREFERENCES
+        # ASK_WATCHLIST -> ASK_DAILY_BRIEFING
         # =========================================================
 
         result = await service.handle_response(
             session=onboarding_session,
             response="NVIDIA, Microsoft, TCS",
-        )
-
-        assert result.step == "ASK_INSIGHT_PREFERENCES"
-        assert result.completed is False
-
-        onboarding_session = (
-            await onboarding_repository.get_by_user_id(user.id)
-        )
-
-        assert onboarding_session is not None
-        assert (
-            onboarding_session.current_step
-            == "ASK_INSIGHT_PREFERENCES"
-        )
-
-        assert onboarding_session.temporary_data[
-            "tracked_entities"
-        ] == [
-            "NVIDIA",
-            "Microsoft",
-            "TCS",
-        ]
-
-        # =========================================================
-        # ASK_INSIGHT_PREFERENCES -> ASK_ALERTS
-        # =========================================================
-
-        result = await service.handle_response(
-            session=onboarding_session,
-            response="Earnings, company news, M&A",
-        )
-
-        assert result.step == "ASK_ALERTS"
-        assert result.completed is False
-
-        onboarding_session = (
-            await onboarding_repository.get_by_user_id(user.id)
-        )
-
-        assert onboarding_session is not None
-        assert onboarding_session.current_step == "ASK_ALERTS"
-
-        assert onboarding_session.temporary_data[
-            "insight_preferences"
-        ] == [
-            "Earnings",
-            "company news",
-            "M&A",
-        ]
-
-        # =========================================================
-        # ASK_ALERTS -> ASK_DAILY_BRIEFING
-        # =========================================================
-
-        result = await service.handle_response(
-            session=onboarding_session,
-            response="Large market moves, earnings",
         )
 
         assert result.step == "ASK_DAILY_BRIEFING"
@@ -283,10 +167,11 @@ async def test_onboarding_persists_end_to_end():
         assert onboarding_session.current_step == "ASK_DAILY_BRIEFING"
 
         assert onboarding_session.temporary_data[
-            "alert_preferences"
+            "tracked_entities"
         ] == [
-            "Large market moves",
-            "earnings",
+            "NVIDIA",
+            "Microsoft",
+            "TCS",
         ]
 
         # =========================================================
@@ -306,10 +191,7 @@ async def test_onboarding_persists_end_to_end():
         )
 
         assert onboarding_session is not None
-        assert (
-            onboarding_session.current_step
-            == "ASK_BRIEFING_TIME"
-        )
+        assert onboarding_session.current_step == "ASK_BRIEFING_TIME"
 
         assert (
             onboarding_session.temporary_data[
@@ -396,38 +278,16 @@ async def test_onboarding_persists_end_to_end():
 
         assert temporary_data["display_name"] == "Sri"
 
-        assert temporary_data["role"] == (
-            "Student and investor"
-        )
-
         assert temporary_data["interests"] == [
             "AI",
             "technology",
             "startups",
-            "financial news",
-        ]
-
-        assert temporary_data["market_preferences"] == [
-            "Indian equities",
-            "ETFs",
-            "IPOs",
         ]
 
         assert temporary_data["tracked_entities"] == [
             "NVIDIA",
             "Microsoft",
             "TCS",
-        ]
-
-        assert temporary_data["insight_preferences"] == [
-            "Earnings",
-            "company news",
-            "M&A",
-        ]
-
-        assert temporary_data["alert_preferences"] == [
-            "Large market moves",
-            "earnings",
         ]
 
         assert temporary_data["briefing_enabled"] is True
@@ -461,20 +321,17 @@ async def test_onboarding_persists_end_to_end():
 
         assert profile is not None
 
-        assert profile.role == "Student and investor"
+        # The new onboarding intentionally does not collect role.
+        assert profile.role is None
 
         assert profile.interests == [
             "AI",
             "technology",
             "startups",
-            "financial news",
         ]
 
-        assert profile.market_preferences == [
-            "Indian equities",
-            "ETFs",
-            "IPOs",
-        ]
+        # These fields are no longer collected during first interaction.
+        assert profile.market_preferences == []
 
         assert profile.tracked_entities == [
             "NVIDIA",
@@ -482,16 +339,9 @@ async def test_onboarding_persists_end_to_end():
             "TCS",
         ]
 
-        assert profile.insight_preferences == [
-            "Earnings",
-            "company news",
-            "M&A",
-        ]
+        assert profile.insight_preferences == []
 
-        assert profile.alert_preferences == [
-            "Large market moves",
-            "earnings",
-        ]
+        assert profile.alert_preferences == []
 
         assert profile.briefing_enabled is True
 
@@ -506,4 +356,3 @@ async def test_onboarding_persists_end_to_end():
         # =========================================================
 
         await session.rollback()
-

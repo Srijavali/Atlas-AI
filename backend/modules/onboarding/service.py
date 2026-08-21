@@ -21,13 +21,15 @@ class OnboardingService:
     """
     Deterministic + hybrid onboarding state machine for Atlas.
 
-    The onboarding collects useful information for:
+    The onboarding collects only the information that is most useful
+    during a first interaction:
     - personalization
-    - market awareness
+    - interests
     - watchlists
-    - insights
-    - alerts
     - daily briefings
+
+    Additional profile fields remain supported by the persistence layer
+    and can be populated later as the user interacts with Atlas.
 
     Users can:
     - provide predefined or custom free-text answers
@@ -44,6 +46,15 @@ class OnboardingService:
         "ASK_DAILY_BRIEFING",
         "ASK_BRIEFING_TIME",
         "ASK_TIMEZONE",
+    }
+
+    # Legacy steps are kept recognized so already-started sessions can
+    # be migrated safely without changing the database schema.
+    LEGACY_STEP_REDIRECTS = {
+        "ASK_ROLE": "ASK_INTERESTS",
+        "ASK_MARKET_PREFERENCES": "ASK_WATCHLIST",
+        "ASK_INSIGHT_PREFERENCES": "ASK_DAILY_BRIEFING",
+        "ASK_ALERTS": "ASK_DAILY_BRIEFING",
     }
 
     def __init__(
@@ -70,6 +81,23 @@ class OnboardingService:
         )
 
         if session is not None:
+            # Migrate an incomplete session from the old onboarding flow.
+            # Existing temporary_data is preserved; only the current step
+            # is moved to the corresponding step in the shorter flow.
+            if (
+                session.status != SessionStatus.COMPLETED
+                and session.current_step in self.LEGACY_STEP_REDIRECTS
+            ):
+                next_step = self.LEGACY_STEP_REDIRECTS[
+                    session.current_step
+                ]
+
+                return await self._move_to_step(
+                    session,
+                    next_step,
+                    temporary_data=self._data(session),
+                )
+
             return OnboardingResult(
                 step=session.current_step,
                 message=self._message_for_step(
@@ -105,6 +133,17 @@ class OnboardingService:
         current_step = session.current_step
         response = response.strip()
 
+        # If an existing persisted session is still on a removed legacy
+        # question, move it into the new flow before processing further.
+        if current_step in self.LEGACY_STEP_REDIRECTS:
+            next_step = self.LEGACY_STEP_REDIRECTS[current_step]
+
+            return await self._move_to_step(
+                session,
+                next_step,
+                temporary_data=self._data(session),
+            )
+
         # ---------------------------------------------------------
         # WELCOME
         # ---------------------------------------------------------
@@ -135,7 +174,7 @@ class OnboardingService:
 
             return await self._move_to_step(
                 session,
-                "ASK_ROLE",
+                "ASK_INTERESTS",
                 temporary_data=temporary_data,
             )
 
@@ -194,7 +233,7 @@ class OnboardingService:
 
                 return await self._move_to_step(
                     session,
-                    "ASK_MARKET_PREFERENCES",
+                    "ASK_WATCHLIST",
                     temporary_data=temporary_data,
                 )
 
@@ -222,7 +261,7 @@ class OnboardingService:
 
             return await self._move_to_step(
                 session,
-                "ASK_MARKET_PREFERENCES",
+                "ASK_WATCHLIST",
                 temporary_data=temporary_data,
             )
 
@@ -287,7 +326,7 @@ class OnboardingService:
 
                 return await self._move_to_step(
                     session,
-                    "ASK_INSIGHT_PREFERENCES",
+                    "ASK_DAILY_BRIEFING",
                     temporary_data=temporary_data,
                 )
 
@@ -320,7 +359,7 @@ class OnboardingService:
 
             return await self._move_to_step(
                 session,
-                "ASK_INSIGHT_PREFERENCES",
+                "ASK_DAILY_BRIEFING",
                 temporary_data=temporary_data,
             )
 
@@ -1072,23 +1111,21 @@ class OnboardingService:
 
         if step == "COMPLETED":
             return (
-                "You're all set! 🎉\n\n"
-                "Atlas will use what you've shared to make "
-                "your research, market updates, alerts, and "
-                "daily briefings more useful.\n\n"
-                "You can always change your preferences later "
-                "and teach Atlas more as you use it.\n\n"
-                "What would you like to do first? 🚀"
-            )
+                 "🎉 You're all set!\n\n"
+                 "Atlas is ready when you are. You can ask me about a company, "
+                 "a stock, a market, an SEC filing — or just throw me a question "
+                 "and let's figure it out together. 🚀"
+	    )
 
         messages = {
             "WELCOME": (
                 "👋 Hey! I'm Atlas.\n\n"
-                "I'll ask you a few quick questions so I can "
-                "personalize your financial research, alerts, "
-                "and briefings.\n\n"
-                "It takes about a minute. You can also skip "
-                "anything. 😊\n\n"
+                "Think of me as your personal financial research buddy. "
+                "I can help you explore companies, understand markets, "
+                "dig through filings, and keep an eye on the things "
+                "that matter to you.\n\n"
+                "Before we get started, let me learn a little about you. "
+                "Nothing complicated — just a few quick questions. 😊\n\n"
                 "Let's get started!"
             ),
 
@@ -1113,17 +1150,17 @@ class OnboardingService:
             ),
 
             "ASK_INTERESTS": (
-                "🎯 What topics are you interested in?\n\n"
-                "Examples:\n"
-                "• AI & technology\n"
-                "• Startups\n"
-                "• Fintech\n"
-                "• Banking\n"
-                "• Economics\n"
-                "• Investing\n\n"
-                "This helps Atlas prioritize news and "
-                "insights relevant to you.\n\n"
-                'Or say "skip".'
+                "Nice to meet you! 😊\n\n"
+                "Now tell me — what kind of things are you curious about?\n\n"
+                "You can mention anything you follow:\n\n"
+                "🤖 AI & technology\n"
+                "🚀 Startups\n"
+                "📈 Investing\n"
+                "💰 Fintech\n"
+                "🏦 Banking\n"
+                "🌍 Economics\n\n"
+                "Or just tell me in your own words. There's no wrong answer!\n\n"
+                'You can also say "skip".'
             ),
 
             "ASK_MARKET_PREFERENCES": (
@@ -1144,20 +1181,12 @@ class OnboardingService:
             ),
 
             "ASK_WATCHLIST": (
-                "👀 What should Atlas keep an eye on "
-                "for you?\n\n"
-                "You can mention companies, stocks, "
-                "sectors, or markets.\n\n"
-                "Examples:\n"
-                "• NVIDIA\n"
-                "• Tesla\n"
-                "• Microsoft\n"
-                "• Reliance\n"
-                "• Indian IT sector\n"
-                "• Semiconductor companies\n\n"
-                "This helps make your research and updates "
-                "more relevant.\n\n"
-                'Nothing specific? Say "skip".'
+                "Ooh, I like that. 👀\n\n"
+                "Is there anything you'd like me to keep an eye on for you?\n\n"
+                "It could be a company, stock, sector, or even a whole market.\n\n"
+                "For example:\n"
+                "NVIDIA, Tesla, Indian IT, semiconductor stocks\n\n"
+                'Nothing specific yet? No worries — just say "skip". 😊'
             ),
 
             "ASK_INSIGHT_PREFERENCES": (
@@ -1193,42 +1222,27 @@ class OnboardingService:
             ),
 
             "ASK_DAILY_BRIEFING": (
-                "☀️ Would you like a personalized "
-                "daily briefing?\n\n"
-                "It can summarize the markets, companies, "
-                "and topics you care about.\n\n"
-                "Examples:\n"
+                "☀️ One more thing before I let you loose on the markets. 😄\n\n"
+                "Would you like me to prepare a daily financial briefing for you?\n\n"
+                "I can bring together things like:\n"
                 "• Market highlights\n"
-                "• Watchlist updates\n"
-                "• Important financial news\n"
-                "• Major developments\n\n"
-                "Reply with yes, no, or skip."
+                "• Important company news\n"
+                "• Updates from your watchlist\n"
+                "• Major financial developments\n\n"
+                "Yes or no?"
             ),
 
             "ASK_BRIEFING_TIME": (
-                "⏰ What time should I send "
-                "your daily briefing?\n\n"
-                "Examples:\n"
-                "• 7:30 AM\n"
-                "• 8:00 AM\n"
-                "• 8:30 AM\n"
-                "• 9:00 AM\n"
-                "• 6:00 PM\n\n"
-                "Choose whatever fits your routine."
+                "Perfect! ☀️\n\n"
+                "When would you like your briefing to arrive?\n\n"
+                "For example: 8:00 AM"
             ),
 
             "ASK_TIMEZONE": (
-                "🌍 Which timezone should Atlas use?\n\n"
-                "Examples:\n"
-                "• Asia/Kolkata\n"
-                "• America/New_York\n"
-                "• Europe/London\n"
-                "• Asia/Singapore\n"
-                "• Australia/Sydney\n\n"
-                "This makes sure your briefings and "
-                "scheduled alerts arrive at the right "
-                "local time.\n\n"
-                'You can also say "skip".'
+                "🌍 And what timezone should I use?\n\n"
+                "You can simply say something like:\n"
+                "Asia/Kolkata\n\n"
+                "If you're not sure, you can say \"skip\"."
             ),
         }
 
